@@ -15,7 +15,12 @@ barWidth = 15;
 vals = ['FIPStxt', 'State', 'Area_Name', 'PCTPOVALL_2015', 'MEDHHINC_2015'];
 
 d3.csv('povertyData.csv', function(csvData) {
-    data = csvData;
+    //data = csvData;
+
+    // Filters data off the bat to just be states!!
+    data = csvData.filter( function(d) {
+            if ( (d[vals[0]]%1000) == 0) {return d;}
+        });
     
     svg = d3.select('#barSVG').append('svg:svg')
         .attr('width', w)
@@ -36,8 +41,8 @@ d3.csv('povertyData.csv', function(csvData) {
         .domain([0, d3.max(data, function(d) { return parseFloat(d[vals[4]]); })])
         .range([(w/2 + (buffer/2)), w-margin]);
     
-    yScale = d3.scale.ordinal()
-        .domain(d3.range(51))
+    yScale = d3.scale.linear()
+        .domain([0, 50])
         .range([axisOffset + padding, h-margin]);
         //.rangeRoundBands([axisOffset + padding, h], padding + barWidth);
     
@@ -117,27 +122,42 @@ d3.csv('povertyData.csv', function(csvData) {
 function drawBars() {
     //for interaction, might come back and make both
     //sides the same variable "bar"
-    yScale.domain(data.map(function(d) {
-        console.log(d[vals[2]]);
-        return d[vals[2]]; }));
+    // yScale.domain(data.map(function(d) {
+    //     console.log(d[vals[2]]);
+    //     return d[vals[2]]; }));
     
+
+    /* Keeping track of order
+    // - global variable "povOrder" : if you sort it, clicking on label would change global,
+    // which would then change y position of all of our bars.
+        **could give us a state id; ex. if it's the 3rd state
+        1. sort pov order then 2. call new y
+    /
+    d3.selectAll('.pov')
+    .transition()
+    .duration(1000)
+    .attr('y', function(d) {
+        povOrder.indexof(3) = use to determine new order within y scale
+    
+    })
+    */
+
     var povBar = svg.selectAll('.pov')
         .data(data);
 
     //counter = 0;
     povBar.enter()
         .append('svg:rect')
-        .filter(function(d){
-            if ( (d[vals[0]]%1000) == 0) {return d;}
-        })
+        // .filter(function(d){
+        //     if ( (d[vals[0]]%1000) == 0) {return d;}
+        // })
         .attr('class', '.pov')
         //.attr('class', '.pov')
         .attr('height', barWidth)
-        .attr('y', function(d) {
-            //counter += padding + barWidth;
-            //console.log(d.Area_Name);
-            //console.log(yScale(d.Area_Name));
-            return yScale(d.Area_Name);
+        .attr('y', function(d, i) {
+            //return yScale(d.Area_Name); - would bind name of states to y scale
+            return yScale(i);
+
         })
         .attr('x', function(d) {
             return povScale(d[vals[3]]);
