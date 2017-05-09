@@ -28,13 +28,18 @@ d3.csv('povertyData.csv', function(csvData) {
         .domain([d3.min(data, function(d) { return parseFloat(d[vals[3]]); })-1,
                  d3.max(data, function(d) { return parseFloat(d[vals[3]]); })+1])
         */
-        .domain([0, d3.max(data, function(d) { return parseFloat(d[vals[3]]); })+1])
+        .domain([0, d3.max(data, function(d) { return parseFloat(d[vals[3]]); })])
         .range([w/2 - (buffer/2), margin]);
     
     //scales median income data
     incScale = d3.scale.linear()
-        .domain([0, d3.max(data, function(d) { return parseFloat(d[vals[4]]); })+1])
+        .domain([0, d3.max(data, function(d) { return parseFloat(d[vals[4]]); })])
         .range([(w/2 + (buffer/2)), w-margin]);
+    
+    yScale = d3.scale.ordinal()
+        .domain(d3.range(51))
+        .range([axisOffset + padding, h-margin]);
+        //.rangeRoundBands([axisOffset + padding, h], padding + barWidth);
     
     // Build axes!
     povAxis = d3.svg.axis()
@@ -88,7 +93,12 @@ d3.csv('povertyData.csv', function(csvData) {
         .text("% in Poverty")
         .attr("font-size", "13px")
         .attr("font-weight", "bold")
-        .attr("fill", "black");
+        .attr("fill", "black")
+        
+        .on('click', function() {
+            console.log(data)
+            //console.log(sort(3));
+        });
     
     //income label
     svg.append("text")
@@ -107,11 +117,14 @@ d3.csv('povertyData.csv', function(csvData) {
 function drawBars() {
     //for interaction, might come back and make both
     //sides the same variable "bar"
+    yScale.domain(data.map(function(d) {
+        console.log(d[vals[2]]);
+        return d[vals[2]]; }));
+    
     var povBar = svg.selectAll('.pov')
         .data(data);
 
-    counter = axisOffset;
-    
+    //counter = 0;
     povBar.enter()
         .append('svg:rect')
         .filter(function(d){
@@ -120,12 +133,13 @@ function drawBars() {
         .attr('class', '.pov')
         //.attr('class', '.pov')
         .attr('height', barWidth)
-        .attr('y', function() {
-            counter += padding + barWidth;
-            return counter;
+        .attr('y', function(d) {
+            //counter += padding + barWidth;
+            //console.log(d.Area_Name);
+            //console.log(yScale(d.Area_Name));
+            return yScale(d.Area_Name);
         })
         .attr('x', function(d) {
-            //console.log(d);
             return povScale(d[vals[3]]);
         })
         .attr('width', function(d) {
@@ -151,14 +165,10 @@ function drawBars() {
             return counter;
         })
         .attr('x', function(d) {
-            console.log(d['MEDHHINC_2015']);
             return w/2 + (buffer/2);
         })
         .attr('width', function(d) {
             results = (w - (margin)) - incScale(d[vals[4]]);
-            console.log(d);
-            console.log(d[vals[4]]);
-            console.log(results);
             return results;
         /*
             if (results < 0) {
@@ -191,6 +201,27 @@ function drawBars() {
 }
 
 //sorts the data by given index
-//function sort(valIndex) {
+function sort(valIndex) {
     
-//}
+    //data = data.sort(d3.descending);
+    //drawBars();
+    
+    data
+        .filter(function(d){
+            if ( (d[vals[0]]%1000) == 0) {return d;}
+        })
+        .sort(function(a, b) {              
+            return d3.descending(parseFloat(a[vals[3]]), parseFloat(b[vals[3]]));
+    });
+    
+    counter = axisOffset;
+    
+    svg.selectAll('.pov')
+        .each(function(d) {
+            d3.select(this).attr('y', function() {
+            counter += padding + barWidth;
+            return counter;
+        });
+    });
+    
+}
