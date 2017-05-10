@@ -41,11 +41,27 @@ d3.csv('povertyData.csv', function(csvData) {
         .domain([0, d3.max(data, function(d) { return parseFloat(d[vals[4]]); })])
         .range([(w/2 + (buffer/2)), w-margin]);
     
-    yScale = d3.scale.linear()
-        .domain([0, 50])
-        .range([axisOffset + padding, h-margin]);
-        //.rangeRoundBands([axisOffset + padding, h], padding + barWidth);
+    // y scale for entire graph
+    // yScale = d3.scale.linear()
+    //     .domain([0, 50])
+    //     .range([axisOffset + padding, h-margin]);
+
+    // Working ordinal yScale! Just change bar binding to return yScale(d.Area_Name)
+    yScale = d3.scale.ordinal()
+        .domain( data.map(function(d) {
+            return d[vals[2]];
+        }))
+        .rangePoints([axisOffset + padding, h-margin]);
     
+    yAxis = d3.svg.axis()
+        .scale(yScale)
+        .orient("right");
+
+    yAxisG = svg.append('g')
+        .attr('class', 'y axis')
+        .call(yAxis);
+
+
     // Build axes!
     povAxis = d3.svg.axis()
         .scale(povScale) // scale to x range
@@ -69,7 +85,8 @@ d3.csv('povertyData.csv', function(csvData) {
         .attr('class', 'axis')
         .attr('transform', 'translate(0,' + axisOffset + ')')
         .call(incAxis); // calls axis function
-    
+
+
     //title
     svg.append("text")
         .attr('x', w/2)
@@ -101,8 +118,9 @@ d3.csv('povertyData.csv', function(csvData) {
         .attr("fill", "black")
         
         .on('click', function() {
-            console.log(data)
+            //console.log(data)
             //console.log(sort(3));
+            change();
         });
     
     //income label
@@ -120,13 +138,6 @@ d3.csv('povertyData.csv', function(csvData) {
 
 //draws the bars
 function drawBars() {
-    //for interaction, might come back and make both
-    //sides the same variable "bar"
-    // yScale.domain(data.map(function(d) {
-    //     console.log(d[vals[2]]);
-    //     return d[vals[2]]; }));
-    
-
     /* Keeping track of order
     // - global variable "povOrder" : if you sort it, clicking on label would change global,
     // which would then change y position of all of our bars.
@@ -148,16 +159,14 @@ function drawBars() {
     //counter = 0;
     povBar.enter()
         .append('svg:rect')
-        // .filter(function(d){
-        //     if ( (d[vals[0]]%1000) == 0) {return d;}
-        // })
         .attr('class', '.pov')
         //.attr('class', '.pov')
         .attr('height', barWidth)
         .attr('y', function(d, i) {
+            // order according to area name
+            return yScale(d[vals[2]]);
             //return yScale(d.Area_Name); - would bind name of states to y scale
-            return yScale(i);
-
+            //return yScale(i);
         })
         .attr('x', function(d) {
             return povScale(d[vals[3]]);
@@ -175,14 +184,19 @@ function drawBars() {
     
     incBar.enter()
         .append('svg:rect')
-        .filter(function(d){
-            if ( (d[vals[0]]%1000) == 0) {return d;}
-        })
+        // .filter(function(d){
+        //     if ( (d[vals[0]]%1000) == 0) {return d;}
+        // })
         .attr('class', '.inc')
         .attr('height', barWidth)
-        .attr('y', function() {
-            counter += padding + barWidth;
-            return counter;
+        // .attr('y', function() {
+        //     counter += padding + barWidth;
+        //     return counter;
+        // })
+        .attr('y', function(d, i) {
+            // order according to area name
+            return yScale(d[vals[2]]);
+            //return yScale(i);
         })
         .attr('x', function(d) {
             return w/2 + (buffer/2);
@@ -190,11 +204,6 @@ function drawBars() {
         .attr('width', function(d) {
             results = (w - (margin)) - incScale(d[vals[4]]);
             return results;
-        /*
-            if (results < 0) {
-                console.log(d);
-                return 0;}
-        */
         })
         .style('fill', 'red');
     
@@ -211,13 +220,17 @@ function drawBars() {
         .attr('class', '.names')
         .attr('text-anchor', 'middle')
         .attr('x', (w/2))
-        .attr('y', function() {
-            counter += padding + barWidth;
-            return counter;
+        // .attr('y', function() {
+        //     counter += padding + barWidth;
+        //     return counter;
+        // })
+        .attr('y', function(d, i) {
+            // order according to area name
+            return yScale(d[vals[2]]) + barWidth;
+            //return yScale(i) + barWidth;
+
         })
-        .text(function(d){
-            return d[vals[2]];
-        });
+        .text(function(d) { return d[vals[2]]; });
 }
 
 //sorts the data by given index
@@ -244,4 +257,46 @@ function sort(valIndex) {
         });
     });
     
+}
+
+function change() {
+    // Copy-on-write since tweens are evaluated after a delay.
+    checked = false;
+
+    // Sorts domain
+    // drawn from https://bl.ocks.org/mbostock/3885705
+    var y = yScale.domain(data.sort(checked
+        // sort by poverty
+        ? function(a, b) { return b[vals[3]] - a[vals[3]] }
+        // sort by name
+        : function(a, b) { return d3.ascending(a.Area_Name, b.Area_Name); })
+        .map(function(d) { return d.Area_Name; }));
+
+    // Moves all rectangles to position based on their name 
+    svg.selectAll('rect')
+        .attr('y', function(d) {
+            return y(d[vals[2]]);
+        });
+
+    // Moves all text to position based on their name
+    svg.selectAll('text')
+        .filter(function(d) {
+            if (this.attr.class == '.names') {
+            return this;
+        }
+        })
+        .attr('y', function(d) { return y(d[vals[2]]); });
+
+    // 
+    var transition = svg.transition().duration(750),
+        delay = function(d, i) { return i * 50; };
+
+    transition.selectAll('.pov')
+        .delay(delay)
+        .attr("y", function(d) { return y(d.Area_Name); });
+
+    // transition.select(".y.axis")
+    //     .call(yAxis)
+    //     .selectAll("g")
+    //     .delay(delay); 
 }
