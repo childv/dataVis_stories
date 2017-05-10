@@ -99,39 +99,79 @@ d3.csv('povertyData.csv', function(csvData) {
     
     //state label
     svg.append("text")
+        .attr('class', '.axislabel')
         .attr('x', w/2)
         .attr('y', axisOffset-25)
         .attr('text-anchor', 'middle')
         .text("State")
         .attr("font-size", "13px")
         .attr("font-weight", "bold")
-        .attr("fill", "black");
+        .attr("fill", "black")
+        .attr("cursor", "pointer")
+        .on('click', function() {
+            change(2)
+            d3.selectAll("text")
+                .filter(function(){
+                    return (this.classList.contains('.axislabel'));})
+                .attr("fill", function(){
+                console.log(this);
+                return "grey";
+            });
+            d3.select(this).transition()
+                .duration(200)
+                .attr("fill", "black");
+        });
+    
     
     //poverty label
     svg.append("text")
+        .attr('class', '.axislabel')
         .attr('x', (margin + ((w - (margin*2)) - buffer)/4))
         .attr('y', axisOffset-25)
         .attr('text-anchor', 'middle')
         .text("% in Poverty")
         .attr("font-size", "13px")
         .attr("font-weight", "bold")
-        .attr("fill", "black")
-        
+        .attr("fill", "gray")
+        .attr("cursor", "pointer")
         .on('click', function() {
-            //console.log(data)
-            //console.log(sort(3));
-            change();
+            change(3)
+            d3.selectAll("text")
+                .filter(function(){
+                    return (this.classList.contains('.axislabel'));})
+                .attr("fill", function(){
+                console.log(this);
+                return "grey";
+            });
+            d3.select(this).transition()
+                .duration(200)
+                .attr("fill", "black");
         });
     
     //income label
     svg.append("text")
+        .attr('class', '.axislabel')
         .attr('x', w - (margin + ((w - (margin*2)) - buffer)/4))
         .attr('y', axisOffset-25)
         .attr('text-anchor', 'middle')
         .text("Median Income ($)")
         .attr("font-size", "13px")
         .attr("font-weight", "bold")
-        .attr("fill", "black");
+        .attr("fill", "gray")
+        .attr("cursor", "pointer")
+        .on('click', function() {
+            change(4)
+            d3.selectAll("text")
+                .filter(function(){
+                    return (this.classList.contains('.axislabel'));})
+                .attr("fill", function(){
+                console.log(this);
+                return "grey";
+            });
+            d3.select(this).transition()
+                .duration(200)
+                .attr("fill", "black");
+        });
     
     drawBars();
 });
@@ -175,7 +215,7 @@ function drawBars() {
             results = ((w/2) - (buffer/2)) - povScale(d[vals[3]]);
             return results;
         })
-        .style('fill', 'green');
+        .style('fill', '#68935B');
         
     var incBar = svg.selectAll('.inc')
         .data(data);
@@ -184,30 +224,22 @@ function drawBars() {
     
     incBar.enter()
         .append('svg:rect')
-        // .filter(function(d){
-        //     if ( (d[vals[0]]%1000) == 0) {return d;}
-        // })
         .attr('class', '.inc')
         .attr('height', barWidth)
-        // .attr('y', function() {
-        //     counter += padding + barWidth;
-        //     return counter;
-        // })
         .attr('y', function(d, i) {
             // order according to area name
             return yScale(d[vals[2]]);
-            //return yScale(i);
         })
         .attr('x', function(d) {
             return w/2 + (buffer/2);
         })
         .attr('width', function(d) {
-            results = (w - (margin)) - incScale(d[vals[4]]);
+            results = incScale(d[vals[4]]) - (w/2 + (buffer/2));
             return results;
         })
-        .style('fill', 'red');
+        .style('fill', '#66789A');
     
-    var barText = svg.selectAll('.names')
+    var barText = svg.selectAll(".names")
         .data(data);
         
     counter = axisOffset + barWidth;
@@ -228,7 +260,6 @@ function drawBars() {
             // order according to area name
             return yScale(d[vals[2]]) + barWidth;
             //return yScale(i) + barWidth;
-
         })
         .text(function(d) { return d[vals[2]]; });
 }
@@ -259,42 +290,50 @@ function sort(valIndex) {
     
 }
 
-function change() {
+function change(index) {
     // Copy-on-write since tweens are evaluated after a delay.
-    checked = false;
+    checked = true;
+    if (index == 2) {
+        checked = false;
+    }
 
     // Sorts domain
     // drawn from https://bl.ocks.org/mbostock/3885705
     var y = yScale.domain(data.sort(checked
         // sort by poverty
-        ? function(a, b) { return b[vals[3]] - a[vals[3]] }
+        ? function(a, b) { return b[vals[index]] - a[vals[index]] }
         // sort by name
         : function(a, b) { return d3.ascending(a.Area_Name, b.Area_Name); })
         .map(function(d) { return d.Area_Name; }));
 
     // Moves all rectangles to position based on their name 
     svg.selectAll('rect')
+        .transition()
+            .duration(1000)
         .attr('y', function(d) {
             return y(d[vals[2]]);
         });
 
     // Moves all text to position based on their name
-    svg.selectAll('text')
-        .filter(function(d) {
-            if (this.attr.class == '.names') {
-            return this;
-        }
+    d3.selectAll("text")
+        .filter(function(d){
+            return this.classList.contains('.names');
         })
-        .attr('y', function(d) { return y(d[vals[2]]); });
+        .transition()
+            .duration(1000)
+            .attr('y', function(d) {
+                return y(d[vals[2]])+barWidth;
+            });
 
-    // 
+    //
+    /*
     var transition = svg.transition().duration(750),
         delay = function(d, i) { return i * 50; };
 
     transition.selectAll('.pov')
         .delay(delay)
-        .attr("y", function(d) { return y(d.Area_Name); });
-
+        .attr('y', function(d) { return y(d.Area_Name); });
+        */
     // transition.select(".y.axis")
     //     .call(yAxis)
     //     .selectAll("g")
