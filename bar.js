@@ -15,8 +15,6 @@ barWidth = 15;
 vals = ['FIPStxt', 'State', 'Area_Name', 'PCTPOVALL_2015', 'MEDHHINC_2015'];
 
 d3.csv('povertyData.csv', function(csvData) {
-    //data = csvData;
-
     // Filters data off the bat to just be states!!
     data = csvData.filter( function(d) {
             if ( (d[vals[0]]%1000) == 0) {return d;}
@@ -29,10 +27,6 @@ d3.csv('povertyData.csv', function(csvData) {
     //scales poverty % data
     //note range is from right to left
     povScale = d3.scale.linear()
-        /*
-        .domain([d3.min(data, function(d) { return parseFloat(d[vals[3]]); })-1,
-                 d3.max(data, function(d) { return parseFloat(d[vals[3]]); })+1])
-        */
         .domain([0, d3.max(data, function(d) { return parseFloat(d[vals[3]]); })])
         .range([w/2 - (buffer/2), margin]);
     
@@ -193,26 +187,48 @@ function drawBars() {
     var povBar = svg.selectAll('.pov')
         .data(data);
 
-    //counter = 0;
     povBar.enter()
-        .append('svg:rect')
+        .append('g')
+        //.append('svg:rect')
         .attr('class', '.pov')
+        .append('rect')
         //.attr('class', '.pov')
         .attr('height', barWidth)
-        .attr('y', function(d, i) {
+        .attr('y', function(d) {
             // order according to area name
             return yScale(d[vals[2]]);
-            //return yScale(d.Area_Name); - would bind name of states to y scale
-            //return yScale(i);
         })
-        .attr('x', function(d) {
-            return povScale(d[vals[3]]);
-        })
+        .attr('x', function(d) { return povScale(d[vals[3]]); })
         .attr('width', function(d) {
             results = ((w/2) - (buffer/2)) - povScale(d[vals[3]]);
             return results;
         })
         .style('fill', '#68935B');
+
+    // Adds numbers to bars
+    povBar
+        //.append('svg:text')
+        .append('text')
+        .attr('class', '.bartext')
+        .attr('text-anchor', 'end')
+        .attr('x', function(d) {
+            // check if it's a decimal
+            if (d[vals[3]] % 1 != 0) {
+                // check if it has two digits
+                if (d[vals[3]] < 10) {
+                    return povScale(d[vals[3]]) + 20;
+                } else {
+                    return povScale(d[vals[3]]) + 25;
+                }
+            } else {
+                return (povScale(d[vals[3]]) + 15);
+            }
+        })
+        .attr('y', function(d) { return yScale(d[vals[2]]); })
+        .attr('dy', barWidth/2 + 4)
+        .text(function(d) { return d[vals[3]]; })
+        .style('fill', 'white')
+        .style('z-index', '100');
         
     var incBar = svg.selectAll('.inc')
         .data(data);
@@ -249,46 +265,11 @@ function drawBars() {
         .attr('class', '.names')
         .attr('text-anchor', 'middle')
         .attr('x', (w/2))
-        // .attr('y', function() {
-        //     counter += padding + barWidth;
-        //     return counter;
-        // })
-        .attr('y', function(d, i) {
-            // order according to area name
-            return yScale(d[vals[2]]) + barWidth;
-            //return yScale(i) + barWidth;
-        })
+        .attr('y', function(d) { return yScale(d[vals[2]]) + barWidth; })
         .text(function(d) { return d[vals[2]]; });
 }
 
-//sorts the data by given index
-function sort(valIndex) {
-    
-    //data = data.sort(d3.descending);
-    //drawBars();
-    
-    data
-        .filter(function(d){
-            if ( (d[vals[0]]%1000) == 0) {return d;}
-        })
-        .sort(function(a, b) {              
-            return d3.descending(parseFloat(a[vals[3]]), parseFloat(b[vals[3]]));
-    });
-    
-    counter = axisOffset;
-    
-    svg.selectAll('.pov')
-        .each(function(d) {
-            d3.select(this).attr('y', function() {
-            counter += padding + barWidth;
-            return counter;
-        });
-    });
-    
-}
-
 function change(index) {
-    // Copy-on-write since tweens are evaluated after a delay.
     checked = true;
     if (index == 2) {
         checked = false;
@@ -322,17 +303,13 @@ function change(index) {
                 return y(d[vals[2]])+barWidth;
             });
 
-    //
-    /*
-    var transition = svg.transition().duration(750),
-        delay = function(d, i) { return i * 50; };
-
-    transition.selectAll('.pov')
-        .delay(delay)
-        .attr('y', function(d) { return y(d.Area_Name); });
-        */
-    // transition.select(".y.axis")
-    //     .call(yAxis)
-    //     .selectAll("g")
-    //     .delay(delay); 
+    d3.selectAll("text")
+        .filter(function(d){
+            return this.classList.contains('.bartext');
+        })
+        .transition()
+            .duration(1000)
+            .attr('y', function(d) {
+                return y(d[vals[2]]);
+            });
 }
