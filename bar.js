@@ -1,7 +1,7 @@
 /* Code by Adam Klein and Veronica Child */
 
 w = 800;
-h = 2000;
+h = 1300;
 //outer margin of the svg
 margin = 60;
 //space between the two bar graphs
@@ -9,7 +9,7 @@ buffer = 100;
 //y-coord where the axes begin
 axisOffset = margin + 50;
 //space between bars
-padding = 5;
+padding = 10;
 barWidth = 15;
 
 vals = ['FIPStxt', 'State', 'Area_Name', 'PCTPOVALL_2015', 'MEDHHINC_2015'];
@@ -114,7 +114,6 @@ d3.csv('povertyData.csv', function(csvData) {
                 .filter(function(){
                     return (this.classList.contains('.axislabel'));})
                 .attr("fill", function(){
-                console.log(this);
                 return "grey";
             });
             d3.select(this).transition()
@@ -140,7 +139,6 @@ d3.csv('povertyData.csv', function(csvData) {
                 .filter(function(){
                     return (this.classList.contains('.axislabel'));})
                 .attr("fill", function(){
-                console.log(this);
                 return "grey";
             });
             d3.select(this).transition()
@@ -165,7 +163,6 @@ d3.csv('povertyData.csv', function(csvData) {
                 .filter(function(){
                     return (this.classList.contains('.axislabel'));})
                 .attr("fill", function(){
-                console.log(this);
                 return "grey";
             });
             d3.select(this).transition()
