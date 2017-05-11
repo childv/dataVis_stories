@@ -164,6 +164,7 @@ d3.csv('povertyData.csv', function(csvData) {
                 .attr("fill", "black");
         });
     
+    change(2);
     drawBars();
 });
 

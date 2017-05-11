@@ -16,7 +16,10 @@ var dataAttributes; // Columns to be found in stateData CSV
 var colorScale;     // d3 scale mapping data to color
 var state;          // d3 selection containing the .state elements
 
-var colorVar = 'PCTPOV017_2015'; // Populate by percent in poverty overall
+//var colorVar = 'PCTPOV017_2015'; // Populate by percent in poverty overall
+var povAll = 'POVALL_2015';
+var pov17 = 'POV017_2015';
+
 
 // Define projection and geoPath that will let us convert lat/long to pixel coordinates
 var projection = d3.geo.albersUsa();
@@ -88,7 +91,11 @@ var buildMap = function() {
   			var count = Object.keys(d).length; // gets number of CSV attribute - could use to differentiate if county or state
   			//console.log(count);
 
-            i = stateToData[d.properties.name][colorVar];
+            i = (parseInt(stateToData[d.properties.name][pov17]) / 
+                 parseInt(stateToData[d.properties.name][povAll]));
+            console.log(stateToData[d.properties.name][pov17])
+            console.log(stateToData[d.properties.name][povAll])
+            console.log(i);
             return colorScale(i);
    		}
     	)
@@ -101,12 +108,12 @@ var buildMap = function() {
         		.duration(500)
         		.style('opacity', .9);
         	div.style('display', 'inline');
-        	div.text(d.properties.name + "\n" + stateToData[d.properties.name][colorVar])
+        	div.text(d.properties.name + "\n" + ((parseInt(stateToData[d.properties.name][pov17])/parseInt(stateToData[d.properties.name][povAll])) * 100) + "%")
         		.style('left', (d3.event.pageX) + "px")     
            		.style("top", (d3.event.pageY - 28) + "px");
         })
         .on('mousemove', function(d) {
-        	div.style('left', (d3.event.pageX) + "px")     
+        	div.style('left', (d3.event.pageX) + "px")
            		.style("top", (d3.event.pageY - 28) + "px");
         })
         .on('mouseout', function(d) {
@@ -139,8 +146,8 @@ d3.json('usCoords.json', function(error, jsonData) {
         }
         //console.log(stateToData);
         
-        var minDataVal = d3.min(stateData, function(d) { return parseInt(d[colorVar]); });
-        var maxDataVal = d3.max(stateData, function(d) { return parseInt(d[colorVar]); });
+        var minDataVal = d3.min(stateData, function(d) { return parseInt(d[pov17])/parseInt(d[povAll]); });
+        var maxDataVal = d3.max(stateData, function(d) { return parseInt(d[pov17])/parseInt(d[povAll]); });
         var minColor = 'steelblue';
         var maxColor = 'crimson';
         
