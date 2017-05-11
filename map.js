@@ -6,7 +6,7 @@
 */
 
 var width = 960;
-var height = 500;
+var height = 600;
 
 // These may be useful to refer back to the data after its loaded
 var geoData;        // Geographic data of state shapes loaded from JSON file
@@ -38,8 +38,8 @@ var div = d3.select('#mapDiv').append('div')
 
 // Add color scale gradient legen
 // From tutorial: https://www.visualcinnamon.com/2016/05/smooth-color-legend-d3-svg-gradient.html
-var defs = svg.append('defs')
-			.attr('class', 'key');
+var legend = svg.append('g')
+        .attr('class', 'key');
 var linearGradient = svg.append('linearGradient')
 	.attr('id', 'linear-gradient');
 
@@ -50,10 +50,11 @@ linearGradient
 	.attr('x2', '100%')
 	.attr('y2', '0%');
 
-svg.append('text')
+legend.append('text')
 	.attr('class', 'caption')
 	.attr('x', 500)
 	.attr('y', 485)
+    .attr('text-anchor', 'start')
 	.text('Percent in Poverty');
 
 // Using the global variables that have been set for geoData, stateData, etc, build map
@@ -93,9 +94,9 @@ var buildMap = function() {
 
             i = (parseInt(stateToData[d.properties.name][pov17]) / 
                  parseInt(stateToData[d.properties.name][povAll]));
-            console.log(stateToData[d.properties.name][pov17])
-            console.log(stateToData[d.properties.name][povAll])
-            console.log(i);
+//            console.log(stateToData[d.properties.name][pov17])
+//            console.log(stateToData[d.properties.name][povAll])
+//            console.log(i);
             return colorScale(i);
    		}
     	)
@@ -146,10 +147,20 @@ d3.json('usCoords.json', function(error, jsonData) {
         }
         //console.log(stateToData);
         
-        var minDataVal = d3.min(stateData, function(d) { return parseInt(d[pov17])/parseInt(d[povAll]); });
-        var maxDataVal = d3.max(stateData, function(d) { return parseInt(d[pov17])/parseInt(d[povAll]); });
+        var minDataVal = d3.min(stateData, function(d) { return (parseInt(d[pov17])/parseInt(d[povAll])); });
+        var maxDataVal = d3.max(stateData, function(d) { return (parseInt(d[pov17])/parseInt(d[povAll])); });
         var minColor = 'steelblue';
         var maxColor = 'crimson';
+        
+        // Set up axis for gradient scale
+        x = d3.scale.linear()
+            .domain([minDataVal, maxDataVal])
+            .range([width - 360, width - 60]);
+        
+        xAxis = d3.svg.axis()
+            .scale(x)
+            .orient('bottom')
+            .ticks(8);
         
         colorScale = d3.scale.linear()
         .domain([minDataVal, maxDataVal])
@@ -163,13 +174,42 @@ d3.json('usCoords.json', function(error, jsonData) {
         	.attr('stop-color', function(d) { return d; });
 
         //Draw the rectangle and fill with gradient
-		svg.append("rect")
+		// NOTE: it's taking into account county data as well
+        legend.append("rect")
 			// position rectangle
 			.attr('x', 500)
 			.attr('y', 490)
 			.attr("width", 300)
-			.attr("height", 20)
+			.attr("height", 10)
 			.style("fill", "url(#linear-gradient"); // fill with gradient id
+        
+        legend.selectAll('rect')
+            .data(stateData)
+            .enter()
+            .append('rect')
+            // position rectangle
+            .attr('x', function(d) {
+                //console.log(d[pov17])
+                m = (parseInt(d[pov17]) / parseInt(d[povAll]));
+                console.log(m)
+                if (m > .7) {
+                    return x(.7);
+                } else {
+                    return x(m)
+                }
+            })
+            .attr('width', 40)
+            .attr('height', 8)
+            .style('fill', function(d) {
+                i = (parseInt(d[pov17]) / parseInt(d[povAll]));
+                console.log(colorScale(i));
+                return colorScale(i); });
+//            .style('fill', 'green');
+        
+        // Call x axis; html hides it
+        legend.attr('class', 'axis')
+            .call(xAxis)
+            .attr('transform', 'translate(0,' + (height - 100) + ')');
 
         
         // Build the vis!
