@@ -4,22 +4,12 @@
 <!-- <script src="colorbrewer.min.js"></script>
  --><title>US Map of Percent of Impoverished Under 17</title>
 <style>
-
-.state-borders {
-  fill: #ccc;
-  stroke: #fff;
-  stroke-width: 0.5px;
-  stroke-linejoin: round;
-  stroke-linecap: round;
-  pointer-events: none;
-}
-
 /* Style for Custom Tooltip */
 div.tooltip {   
  	position: absolute;           
 	text-align: center;           
 	width: 60px;                  
-	height: 28px;                 
+	height: 40px;                 
 	padding: 2px;             
 	font: 12px sans-serif;        
 	background: white;   
@@ -28,10 +18,10 @@ div.tooltip {
 	pointer-events: none;         
 }
     
-.axis path {
+.color.axis path {
         fill: none;
     }
-.axis line {
+.color.axis line {
 		fill: 'black';
 		stroke: none;
 		shape-rendering: crispEdges;
@@ -41,7 +31,7 @@ div.tooltip {
 </head>
 
 <body>
-    <div id="mapDiv"></div>
-</body>
+<!--     <div id="mapDiv"></div>
+ --></body>
 <script src="map.js"></script>
 </html>
