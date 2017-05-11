@@ -108,7 +108,7 @@ var buildMap = function() {
         		.duration(500)
         		.style('opacity', .9);
         	div.style('display', 'inline');
-        	div.text(d.properties.name + "\n" + ((parseInt(stateToData[d.properties.name][pov17])/parseInt(stateToData[d.properties.name][povAll])) * 100) + "%")
+        	div.text(d.properties.name + "\n" + Math.round(((parseInt(stateToData[d.properties.name][pov17])/parseInt(stateToData[d.properties.name][povAll])) * 10000))/100 + "%")
         		.style('left', (d3.event.pageX) + "px")     
            		.style("top", (d3.event.pageY - 28) + "px");
         })
