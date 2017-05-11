@@ -186,13 +186,14 @@ function drawBars() {
 
     var povBar = svg.selectAll('.pov')
         .data(data);
+    
+    format = d3.format("0,000");
 
     povBar.enter()
         .append('g')
         //.append('svg:rect')
         .attr('class', '.pov')
         .append('rect')
-        //.attr('class', '.pov')
         .attr('height', barWidth)
         .attr('y', function(d) {
             // order according to area name
@@ -210,19 +211,10 @@ function drawBars() {
         //.append('svg:text')
         .append('text')
         .attr('class', '.bartext')
-        .attr('text-anchor', 'end')
+        .attr('text-anchor', 'start')
         .attr('x', function(d) {
-            // check if it's a decimal
-            if (d[vals[3]] % 1 != 0) {
-                // check if it has two digits
-                if (d[vals[3]] < 10) {
-                    return povScale(d[vals[3]]) + 20;
-                } else {
-                    return povScale(d[vals[3]]) + 25;
-                }
-            } else {
-                return (povScale(d[vals[3]]) + 15);
-            }
+                return (povScale(d[vals[3]]) + 5);
+            //}
         })
         .attr('y', function(d) { return yScale(d[vals[2]]); })
         .attr('dy', barWidth/2 + 4)
@@ -236,6 +228,7 @@ function drawBars() {
     counter = axisOffset;
     
     incBar.enter()
+        .append('g')
         .append('svg:rect')
         .attr('class', '.inc')
         .attr('height', barWidth)
@@ -251,6 +244,19 @@ function drawBars() {
             return results;
         })
         .style('fill', '#66789A');
+    
+    incBar
+        .append('text')
+        .attr('class', '.bartext')
+        .attr('text-anchor', 'end')
+        .attr('x', function(d) {
+            return (incScale(d[vals[4]]) - 5);
+        })
+        .attr('y', function(d) { return yScale(d[vals[2]]); })
+        .attr('dy', barWidth/2 + 4)
+        .text(function(d) { return format(d[vals[4]]); })
+        .style('fill', 'white')
+        .style('z-index', '100');
     
     var barText = svg.selectAll(".names")
         .data(data);
