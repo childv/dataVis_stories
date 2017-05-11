@@ -5,13 +5,13 @@
  * Veronica Child and Adam Klein
 */
 
-var margin = 30;
-var bottom_margin = 80;
+var margin = 10;        // Margin around vis
+var xOffset = 60;       // Space for x-axis labels
+var yOffset = 80;      // Space for y-axis labels
 var width = 960;
 var height = 600;
 
-var sp_width = 600;
-var sp_height = 600;
+var sp_size = 300;
 
 // These may be useful to refer back to the data after its loaded
 var geoData;        // Geographic data of state shapes loaded from JSON file
@@ -28,7 +28,10 @@ var pov17All = 'PCT17POV_2015';
 
 
 // Define projection and geoPath that will let us convert lat/long to pixel coordinates
-var projection = d3.geo.albersUsa();
+var projection = d3.geo.albersUsa()
+    .translate([width/2 - 100, height/2 - 50])  // translates to center of screen
+    .scale([1000]);
+                                 // scale things down so see entire US
 var geoPath = d3.geo.path()
         .projection(projection);
 
@@ -37,8 +40,6 @@ var mapSVG = d3.select("body")
         .append("svg")
          .attr("width", width)
          .attr("height", height);
-        // .append('g');
-         //.attr('transform', 'translate(' + margin  + "," + margin + ")");
 
 // Add tooltip
 var div = d3.select('body').append('div')
@@ -59,8 +60,8 @@ legend.append('text')
 
 var spSVG = d3.select("body")
     .append('svg')
-     .attr('width', sp_width)
-     .attr('height', sp_height)
+     .attr('width', sp_size)
+     .attr('height', sp_size)
     .append('g');
 
 // Using the global variables that have been set for geoData, stateData, etc, build map
@@ -123,38 +124,55 @@ var buildMap = function() {
 };
 
 var buildSP = function() {
+    // Formatting axis numbers
+    var kformat = d3.format("s");
+
     // x-axis: total poverty
     var totalScale = d3.scale.linear()
-        .domain([d3.min(stateData, function(d) { return parseInt(d[povAll]); }),
-                d3.max(stateData, function(d) { return parseInt(d[povAll]); })])
-        .range([margin, sp_width]); // be sure to change y axis transformation too
+        .domain([d3.min(stateData, function(d) { return parseFloat(d[povAll]); }),
+                d3.max(stateData, function(d) { return parseFloat(d[povAll]); })])
+        .range([yOffset + margin, sp_size - margin]); // be sure to change y axis transformation too
 
     var totalAxis = d3.svg.axis()
         .scale(totalScale)
         .orient("bottom")
-        .ticks(5);
+        .ticks(5)
+        .tickFormat(function(d) { return d3.format(".3s")(d); });
 
     // y-axis: young adults in poverty
     var youngScale = d3.scale.linear()
-        .domain([d3.min(stateData, function(d) { return parseInt(d[pov17]); }),
-                d3.max(stateData, function(d) { return parseInt(d[pov17]); })])
-        .range([sp_height - bottom_margin, margin]);
-
+        .domain([d3.min(stateData, function(d) { return parseFloat(d[pov17]); }),
+                d3.max(stateData, function(d) { return parseFloat(d[pov17]); })])
+        .range([sp_size - xOffset - margin, margin]);
+    
     var youngAxis = d3.svg.axis()
         .scale(youngScale)
         .orient("left")
-        .ticks(5);
+        .ticks(5)
+        // Formats into "millions"
+        .tickFormat(function(d) { return d3.format(".3s")(d); });
 
     // Add X axis
     spSVG.append("g")
         .attr("class", "x axis")
-        .attr("transform", "translate(" + margin + "," + (sp_height - bottom_margin) + ")")
-        .call(totalAxis);
+        .attr("transform", "translate(0," + (sp_size - xOffset) + ")")
+        .call(totalAxis)
+        // rotate x ticks
+        .selectAll('text')
+            .style('text-anchor', 'end')
+            .attr('transform', 'rotate(-60)');
+    // Add X Label
+    spSVG.append('text')
+        .attr('class','label')
+        .attr('x', sp_size/2 - xOffset)
+        .attr('y', sp_size - margin)
+        .style('text-align', 'center')
+        .text("Poverty Overall (Thousands)");
 
     //Add Y axis
     spSVG.append("g")
         .attr('class', 'y axis')
-        .attr('transform', 'translate(' + (margin * 2) + ',0)')
+        .attr('transform', 'translate(' + yOffset + ',0)')
         .call(youngAxis);
 
     var circle = spSVG.selectAll('circle')
@@ -163,17 +181,33 @@ var buildSP = function() {
     circle.enter()
         .append('circle')
         .attr('class', 'circle')
-        .attr('cx', function(d) { return totalScale(parseInt(d[povAll])); })
-        .attr('cy', function(d) { return youngScale(parseInt(d[pov17])); })
+        .attr('cx', function(d) { 
+            return totalScale(parseFloat(d[povAll])); })
+        .attr('cy', function(d) { return youngScale(parseFloat(d[pov17])); })
         .attr('r', 5)
         .style('fill', 'lightgreen')
+        .style('opacity', .3)
+        .style('stroke', 'black')
+        .style('stroke-width', 2)
 
         .on('mouseover', function(d) {
-            console.log(d.Area_Name)
-            d3.select(this).style('fill', 'yellow');
+            d3.select(this).style('fill', 'yellow')
+            .style('z-index', '100');
+            // Select state
+            mapSVG.selectAll('.state')
+                .filter(function(d2) {
+                    if (d2.properties.name == d.Area_Name) { 
+                    return d; }})
+                .style('opacity', .7);
         })
+
         .on('mouseout', function(d) {
-             d3.select(this).style('fill', 'lightgreen');
+            d3.select(this).style('fill', 'lightgreen');
+            mapSVG.selectAll('.state')
+                .filter(function(d2) {
+                    if (d2.properties.name == d.Area_Name) { 
+                    return d; }})
+                .style('opacity', 1);
         });
 };
 
@@ -240,7 +274,7 @@ d3.json('usCoords.json', function(error, jsonData) {
                 return colorScale(i); 
             });
         
-        // Call x axis; html hides it
+        // Call x axis; css in html hides it
         legend.attr('class', 'color axis')
             .call(xAxis)
             .attr('transform', 'translate(0,' + (height - 100) + ')');
