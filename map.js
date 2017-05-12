@@ -5,13 +5,16 @@
  * Veronica Child and Adam Klein
 */
 
-var margin = 10;        // Margin around vis
-var xOffset = 60;       // Space for x-axis labels
-var yOffset = 80;      // Space for y-axis labels
-var width = 960;
-var height = 600;
+var margin = 10;    // Margin around vis
+var xOffset = 60;   // Space for x-axis labels
+var yOffset = 80;   // Space for y-axis labels
+var width = 960;    // Width of map    
+var height = 600;   // Height of map
 
-var sp_size = 300;
+var sp_size = 300;  // Width + height of scatter plot
+
+var t_width = width + sp_size;
+var t_height = 600; //Total width and height
 
 // These may be useful to refer back to the data after its loaded
 var geoData;        // Geographic data of state shapes loaded from JSON file
@@ -29,17 +32,26 @@ var pov17All = 'PCT17POV_2015';
 
 // Define projection and geoPath that will let us convert lat/long to pixel coordinates
 var projection = d3.geo.albersUsa()
-    .translate([width/2 - 100, height/2 - 50])  // translates to center of screen
-    .scale([1000]);
-                                 // scale things down so see entire US
+    .translate([width/2 - 100 - margin, height/2])  // translates to center of screen
+    .scale([1000]); // scale down US map
 var geoPath = d3.geo.path()
-        .projection(projection);
+    .projection(projection);
 
-// Add svg and g elements to the webpage
-var mapSVG = d3.select("body")
-        .append("svg")
-         .attr("width", width)
-         .attr("height", height);
+// Map SVG
+var mapSVG = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+// Title
+mapSVG.append("text")
+    .attr('x', margin)
+    .attr('y', yOffset/2)
+    .attr('text-anchor', 'start')
+    .text("Young Adult Poverty by State")
+    .attr("font-family", "sans-serif")
+    .attr("font-size", "30px")
+    .attr("font-weight", "bold")
+    .attr("fill", "black");
 
 // Add tooltip
 var div = d3.select('body').append('div')
@@ -51,13 +63,7 @@ var div = d3.select('body').append('div')
 var legend = mapSVG.append('g')
         .attr('class', 'key');
 
-legend.append('text')
-	.attr('class', 'caption')
-	.attr('x', 500)
-	.attr('y', 485)
-    .attr('text-anchor', 'start')
-	.text('Percent in Poverty');
-
+// Scatterplot SVG
 var spSVG = d3.select("body")
     .append('svg')
      .attr('width', sp_size)
@@ -87,9 +93,6 @@ var buildMap = function() {
         	// d = json data (which is bound to object)
         	// stateToDate = object form of CSV data
   			var count = Object.keys(d).length; // gets number of CSV attribute - could use to differentiate if county or state
-            // i = (parseInt(stateToData[d.properties.name][pov17]) / 
-            //      parseInt(stateToData[d.properties.name][povAll]));
-            // return colorScale(i);
             i = parseInt(stateToData[d.properties.name][pov17All]);
             return colorScale(i);
    		})
@@ -97,11 +100,13 @@ var buildMap = function() {
             console.log(d.properties.name);
         })
         .on('mouseover', function(d) {
-        	d3.select(this).style('fill-opacity', '.7');
-        	div.transition()
+        	d3.select(this).style('fill-opacity', '.7'); // lighten state
+        	// Tooltip
+            div.transition()
         		.duration(500)
-        		.style('opacity', .9);
-        	div.style('display', 'inline');
+        		.style('opacity', .9)
+                .style('background', 'white');
+            // Tooltip text
         	div.text(d.properties.name + "\n" +
                 d3.round(stateToData[d.properties.name][pov17All], 2) + "%")
                 // Math.round((((parseInt(stateToData[d.properties.name][pov17])/parseInt(stateToData[d.properties.name][povAll])) * 10000))/100) + "%")
@@ -111,16 +116,25 @@ var buildMap = function() {
         .on('mousemove', function(d) {
         	div.style('left', (d3.event.pageX) + "px")
            		.style("top", (d3.event.pageY - 28) + "px");
+            // Toggle corresponding point
+            spSVG.selectAll('circle')
+                .filter(function(d2) {
+                    if (d.properties.name == d2.Area_Name) {
+                        return d2; }})
+                .style('fill', 'yellow')
+                .attr('z-index', '100');
         })
         .on('mouseout', function(d) {
         	div.style('opacity', 0);
         	d3.select(this).style('fill-opacity', '1');
-        });
 
-    // use for built-in title
-    // state
-    //     .append('svg:title')
-    //     .text(function(d){ return d.properties.name; });   
+            spSVG.selectAll('circle')
+                .filter(function(d2) {
+                    if (d.properties.name == d2.Area_Name) {
+                        return d2;
+                    }})
+                .style('fill', 'lightgreen');
+        });  
 };
 
 var buildSP = function() {
@@ -160,29 +174,34 @@ var buildSP = function() {
         // rotate x ticks
         .selectAll('text')
             .style('text-anchor', 'end')
-            .attr('transform', 'rotate(-60)');
+            .attr('transform', 'rotate(-60)')
+            .attr("font-family", "sans-serif");
+
     // Add X Label
     spSVG.append('text')
         .attr('class','label')
         .attr('x', sp_size/2 - xOffset)
         .attr('y', sp_size - margin)
         .style('text-align', 'center')
-        .text("Poverty Overall (Thousands)");
+        .text("Poverty Overall (Thousands)")
+        .attr("font-family", "sans-serif");
 
     //Add Y axis
     spSVG.append("g")
         .attr('class', 'y axis')
         .attr('transform', 'translate(' + yOffset + ',0)')
-        .call(youngAxis);
+        .call(youngAxis)
+        .selectAll('text')
+        .attr('font-family', 'sans-serif');
 
+    // Load points
     var circle = spSVG.selectAll('circle')
         .data(stateData);
 
     circle.enter()
         .append('circle')
         .attr('class', 'circle')
-        .attr('cx', function(d) { 
-            return totalScale(parseFloat(d[povAll])); })
+        .attr('cx', function(d) { return totalScale(parseFloat(d[povAll])); })
         .attr('cy', function(d) { return youngScale(parseFloat(d[pov17])); })
         .attr('r', 5)
         .style('fill', 'lightgreen')
@@ -190,6 +209,7 @@ var buildSP = function() {
         .style('stroke', 'black')
         .style('stroke-width', 2)
 
+        // Mouse actions
         .on('mouseover', function(d) {
             d3.select(this).style('fill', 'yellow')
             .style('z-index', '100');
@@ -199,15 +219,28 @@ var buildSP = function() {
                     if (d2.properties.name == d.Area_Name) { 
                     return d; }})
                 .style('opacity', .7);
+            // Tooltip
+            div.transition()
+                .duration(500)
+                .style('opacity', .9);
+            div.style('display', 'inline')
+                .style('background', 'lightgrey');
+            // Tooltip text
+            div.text(d.Area_Name + "\n" +
+                d3.round(stateToData[d.Area_Name][pov17All], 2) + "%")
+                .style('left', (d3.event.pageX) + "px")     
+                .style("top", (d3.event.pageY - 28) + "px");
         })
 
         .on('mouseout', function(d) {
             d3.select(this).style('fill', 'lightgreen');
             mapSVG.selectAll('.state')
                 .filter(function(d2) {
-                    if (d2.properties.name == d.Area_Name) { 
-                    return d; }})
+                    if (d2.properties.name == d.Area_Name) { return d; }})
                 .style('opacity', 1);
+            div.transition()
+                .duration(50)
+                .style('opacity', 0);
         });
 };
 
@@ -240,7 +273,8 @@ d3.json('usCoords.json', function(error, jsonData) {
         // Set up axis for gradient scale
         x = d3.scale.linear()
             .domain([minDataVal, maxDataVal])
-            .range([width - 360, width - 60]);
+            // Keep length of 300
+            .range([width - 560, width - 260]); // positions on x
         
         xAxis = d3.svg.axis()
             .scale(x)
@@ -257,7 +291,7 @@ d3.json('usCoords.json', function(error, jsonData) {
             .data(stateData)
             .enter()
             .append('rect')
-            // position rectangle
+            // positions color bars
             .attr('x', function(d) {
                 m = parseInt(d[pov17All]);
                 if (m >= 37) { 
@@ -268,22 +302,25 @@ d3.json('usCoords.json', function(error, jsonData) {
             .attr('width', 40)
             .attr('height', 8)
             .style('fill', function(d) {
-                // i = (parseInt(d[pov17]) / parseInt(d[povAll]));
-                // console.log(colorScale(i));
                 i = parseInt(d[pov17All]);
                 return colorScale(i); 
             });
         
         // Call x axis; css in html hides it
         legend.attr('class', 'color axis')
+            // positions scale on y axis
+            .attr('transform', 'translate(0,' + (height - 50) + ')')
             .call(xAxis)
-            .attr('transform', 'translate(0,' + (height - 100) + ')');
+            .selectAll('text')
+            .style('font-family', 'sans-serif');
         
+        // Adds legend caption
         legend.append('text')
             .attr('class', 'caption')
             .attr('x', x.range()[0])
             .attr('y', -3)
-            .text("% of Impoverish 17 and Under");
+            .text("% of Impoverished 17 and Under")
+            .attr("font-family", "sans-serif");
 
         // Build the vis!
         buildMap();

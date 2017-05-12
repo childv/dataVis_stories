@@ -34,11 +34,6 @@ d3.csv('povertyData.csv', function(csvData) {
     incScale = d3.scale.linear()
         .domain([0, d3.max(data, function(d) { return parseFloat(d[vals[4]]); })])
         .range([(w/2 + (buffer/2)), w-margin]);
-    
-    // y scale for entire graph
-    // yScale = d3.scale.linear()
-    //     .domain([0, 50])
-    //     .range([axisOffset + padding, h-margin]);
 
     // Working ordinal yScale! Just change bar binding to return yScale(d.Area_Name)
     yScale = d3.scale.ordinal()
@@ -54,7 +49,6 @@ d3.csv('povertyData.csv', function(csvData) {
     yAxisG = svg.append('g')
         .attr('class', 'y axis')
         .call(yAxis);
-
 
     // Build axes!
     povAxis = d3.svg.axis()
@@ -80,8 +74,7 @@ d3.csv('povertyData.csv', function(csvData) {
         .attr('transform', 'translate(0,' + axisOffset + ')')
         .call(incAxis); // calls axis function
 
-
-    //title
+    //Title
     svg.append("text")
         .attr('x', w/2)
         .attr('y', margin/2)
