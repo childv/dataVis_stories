@@ -124,7 +124,9 @@ var buildMap = function() {
                     if (d.properties.name == d2.Area_Name) {
                         return d2; }})
                 .style('fill', 'yellow')
-                .attr('z-index', '100');
+                .style('opacity', 1)
+                .attr('r', 4)
+                .style('z-index', '100');
         })
         .on('mouseout', function(d) {
         	div.style('opacity', 0);
@@ -135,7 +137,9 @@ var buildMap = function() {
                     if (d.properties.name == d2.Area_Name) {
                         return d2;
                     }})
-                .style('fill', 'lightgreen');
+                .style('fill', 'lightgreen')
+                .attr('r', 3)
+                .style('opacity', .3);
         });  
 };
 
@@ -203,7 +207,7 @@ var buildSP = function() {
         .attr('y', -xOffset)
         .attr('transform', 'rotate(-90)')
         .style('text-anchor', 'middle')
-        .text('0 - 17 in Poverty (thousands)')
+        .text('0 - 17 in Poverty (Thousands)')
         .attr('font-family', 'sans-serif')
         .attr('font-weight', 'bold');
 
@@ -217,7 +221,7 @@ var buildSP = function() {
         .attr('class', 'circle')
         .attr('cx', function(d) { return totalScale(parseFloat(d[povAll])); })
         .attr('cy', function(d) { return youngScale(parseFloat(d[pov17])); })
-        .attr('r', 5)
+        .attr('r', 3)
         .style('fill', 'lightgreen')
         .style('opacity', .3)
         .style('stroke', 'black')
@@ -226,6 +230,8 @@ var buildSP = function() {
         // Mouse actions
         .on('mouseover', function(d) {
             d3.select(this).style('fill', 'yellow')
+            .style('opacity', 1)
+            .attr('r', 4)
             .style('z-index', '100');
             // Select state
             map.selectAll('.state')
@@ -242,12 +248,14 @@ var buildSP = function() {
             // Tooltip text
             div.text(d.Area_Name + "\n" +
                 d3.round(stateToData[d.Area_Name][pov17All], 2) + "%")
-                .style('left', (d3.event.pageX) + "px")     
+                .style('left', (d3.event.pageX + 8) + "px")     
                 .style("top", (d3.event.pageY - 28) + "px");
         })
 
         .on('mouseout', function(d) {
-            d3.select(this).style('fill', 'lightgreen');
+            d3.select(this).style('fill', 'lightgreen')
+            .attr('r', 3)
+            .style('opacity', .3);
             map.selectAll('.state')
                 .filter(function(d2) {
                     if (d2.properties.name == d.Area_Name) { return d; }})
