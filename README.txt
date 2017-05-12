@@ -13,7 +13,9 @@ FILE MANIFEST
  * map.js: JS code that builds and runs the map visualization
 
  * povertyYoungAdults.csv: CSV file used by the map visualization that contains data attributes taken from PovertyEstimates.xls. Uses area name, total number of people in poverty (POVALL_2015)and total number of 0 - 17 year olds in poverty (POV017_2015) from the original dataset with a new, derived attribute representing the percentage of people in poverty who are 0 - 17 years old (PCT17POV_2015)
- * povertyData.csv: CSV file used by the bar graph visualization that contains data attribetus taken from PovertyEstimates.xls Uses area name, percent of people in poverty (PCTPOVALL_2015)and median income (MEDHHINC_2015)
+ * povertyData.csv: CSV file used by the bar graph visualization that contains data attributes taken from PovertyEstimates.xls Uses area name, percent of people in poverty (PCTPOVALL_2015)and median income (MEDHHINC_2015)
+
+ * usCoords.json: JSON file containing info to draw US states in map visualization
 
  * PovertyEstimates.xls: the original dataset downloaded directly from the Census Bureau
  
