@@ -14,17 +14,15 @@ var height = 600;   // Height of map
 var sp_size = 300;  // Width + height of scatter plot
 
 var t_width = width + sp_size;
-var t_height = 600; //Total width and height
+var t_height = height; //Total width and height
 
 // These may be useful to refer back to the data after its loaded
 var geoData;        // Geographic data of state shapes loaded from JSON file
 var stateData;      // State-by-state data loaded from CSV file
 var stateToData;    // Object mapping state name to stateData object
-var dataAttributes; // Columns to be found in stateData CSV
 var colorScale;     // d3 scale mapping data to color
 var state;          // d3 selection containing the .state elements
 
-//var colorVar = 'PCTPOV017_2015'; // Populate by percent in poverty overall
 var povAll = 'POVALL_2015';
 var pov17 = 'POV017_2015';
 var pov17All = 'PCT17POV_2015';
@@ -37,13 +35,18 @@ var projection = d3.geo.albersUsa()
 var geoPath = d3.geo.path()
     .projection(projection);
 
-// Map SVG
-var mapSVG = d3.select("body").append("svg")
-        .attr("width", width)
-        .attr("height", height);
+// SVG for whole vis
+var svg = d3.select("body").append("svg")
+        .attr("width", t_width)
+        .attr("height", t_height);
+// Map
+var map = svg.append('g')
+    .attr('class', 'map')
+    .attr('width', width)
+    .attr('height', height);
 
 // Title
-mapSVG.append("text")
+map.append("text")
     .attr('x', margin)
     .attr('y', yOffset/2)
     .attr('text-anchor', 'start')
@@ -60,20 +63,19 @@ var div = d3.select('body').append('div')
 
 // Add color scale gradient legend
 // Drawn from Mike Bostock's Choropleth: https://bl.ocks.org/mbostock/4060606
-var legend = mapSVG.append('g')
+var legend = map.append('g')
         .attr('class', 'key');
 
 // Scatterplot SVG
-var spSVG = d3.select("body")
-    .append('svg')
+var sp = svg.append('g')
      .attr('width', sp_size)
      .attr('height', sp_size)
-    .append('g');
+     .attr('transform', 'translate(' + (width - 150) + ',' + (t_height/4) + ')');
 
 // Using the global variables that have been set for geoData, stateData, etc, build map
 var buildMap = function() {
     // Create paths for each state
-    state = mapSVG.selectAll('.state')
+    state = map.selectAll('.state')
         // gets state coords from JSON
         //.data(geoData.features);
         .data(geoData.features);
@@ -117,7 +119,7 @@ var buildMap = function() {
         	div.style('left', (d3.event.pageX) + "px")
            		.style("top", (d3.event.pageY - 28) + "px");
             // Toggle corresponding point
-            spSVG.selectAll('circle')
+            sp.selectAll('circle')
                 .filter(function(d2) {
                     if (d.properties.name == d2.Area_Name) {
                         return d2; }})
@@ -128,7 +130,7 @@ var buildMap = function() {
         	div.style('opacity', 0);
         	d3.select(this).style('fill-opacity', '1');
 
-            spSVG.selectAll('circle')
+            sp.selectAll('circle')
                 .filter(function(d2) {
                     if (d.properties.name == d2.Area_Name) {
                         return d2;
@@ -145,7 +147,7 @@ var buildSP = function() {
     var totalScale = d3.scale.linear()
         .domain([d3.min(stateData, function(d) { return parseFloat(d[povAll]); }),
                 d3.max(stateData, function(d) { return parseFloat(d[povAll]); })])
-        .range([yOffset + margin, sp_size - margin]); // be sure to change y axis transformation too
+        .range([0, sp_size]); // be sure to change y axis transformation too
 
     var totalAxis = d3.svg.axis()
         .scale(totalScale)
@@ -157,7 +159,7 @@ var buildSP = function() {
     var youngScale = d3.scale.linear()
         .domain([d3.min(stateData, function(d) { return parseFloat(d[pov17]); }),
                 d3.max(stateData, function(d) { return parseFloat(d[pov17]); })])
-        .range([sp_size - xOffset - margin, margin]);
+        .range([sp_size - xOffset, 0]);
     
     var youngAxis = d3.svg.axis()
         .scale(youngScale)
@@ -167,7 +169,7 @@ var buildSP = function() {
         .tickFormat(function(d) { return d3.format(".3s")(d); });
 
     // Add X axis
-    spSVG.append("g")
+    sp.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + (sp_size - xOffset) + ")")
         .call(totalAxis)
@@ -177,25 +179,37 @@ var buildSP = function() {
             .attr('transform', 'rotate(-60)')
             .attr("font-family", "sans-serif");
 
-    // Add X Label
-    spSVG.append('text')
+    // Add X label
+    sp.append('text')
         .attr('class','label')
-        .attr('x', sp_size/2 - xOffset)
-        .attr('y', sp_size - margin)
+        .attr('x', sp_size/2 - yOffset - margin - 10)
+        .attr('y', sp_size + margin)
         .style('text-align', 'center')
         .text("Poverty Overall (Thousands)")
-        .attr("font-family", "sans-serif");
+        .attr("font-family", "sans-serif")
+        .attr('font-weight', 'bold');
 
-    //Add Y axis
-    spSVG.append("g")
+    // Add Y axis
+    sp.append("g")
         .attr('class', 'y axis')
-        .attr('transform', 'translate(' + yOffset + ',0)')
         .call(youngAxis)
         .selectAll('text')
         .attr('font-family', 'sans-serif');
 
+    // Add Y label
+    sp.append('text')
+        .attr('class', 'label')
+        .attr('x', -sp_size/2 + xOffset/2) // positions along y!
+        .attr('y', -xOffset)
+        .attr('transform', 'rotate(-90)')
+        .style('text-anchor', 'middle')
+        .text('0 - 17 in Poverty (thousands)')
+        .attr('font-family', 'sans-serif')
+        .attr('font-weight', 'bold');
+
+
     // Load points
-    var circle = spSVG.selectAll('circle')
+    var circle = sp.selectAll('circle')
         .data(stateData);
 
     circle.enter()
@@ -214,7 +228,7 @@ var buildSP = function() {
             d3.select(this).style('fill', 'yellow')
             .style('z-index', '100');
             // Select state
-            mapSVG.selectAll('.state')
+            map.selectAll('.state')
                 .filter(function(d2) {
                     if (d2.properties.name == d.Area_Name) { 
                     return d; }})
@@ -234,7 +248,7 @@ var buildSP = function() {
 
         .on('mouseout', function(d) {
             d3.select(this).style('fill', 'lightgreen');
-            mapSVG.selectAll('.state')
+            map.selectAll('.state')
                 .filter(function(d2) {
                     if (d2.properties.name == d.Area_Name) { return d; }})
                 .style('opacity', 1);
